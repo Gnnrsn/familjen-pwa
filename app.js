@@ -62,8 +62,8 @@
     const p = PEOPLE[e.who];
     const hl = hlForEvent(e.id);
     const cls = ['ev', e.type === 'special' ? 'ev--special' : 'ev--routine', hl ? 'ev--hl' : ''].join(' ');
-    const whoTag = opts.hideWho ? '' : `<span class="who">${p.emoji} ${esc(p.name)}</span>`;
-    const hlTag = hl ? `<span class="hl-tag">${HIGHLIGHT_KINDS[hl.kind].icon} ${esc(HIGHLIGHT_KINDS[hl.kind].label)}</span>` : '';
+    const whoTag = opts.hideWho ? '' : `<span class="who who-tag">${p.emoji} ${esc(p.name)}</span>`;
+    const hlTag = hl ? `<span class="hl-tag" aria-label="Viktigt">!</span>` : '';
     const inner = `
       ${timeHtml(e)}
       <div class="ev-body">
@@ -81,17 +81,16 @@
 
   function hlCard(h, opts) {
     opts = opts || {};
-    const k = HIGHLIGHT_KINDS[h.kind];
     const people = h.who.map((w) => PEOPLE[w]);
     const color = people[0].color;
     const stripes = people.map((p) => p.color).join(', ');
-    return `<article class="hl hl--${h.kind}" style="--c:${color};--stripes:linear-gradient(${people.length > 1 ? stripes : color + ',' + color})">
-      <div class="hl-ico" aria-hidden="true">${k.icon}</div>
+    return `<article class="hl" style="--c:${color};--stripes:linear-gradient(${people.length > 1 ? stripes : color + ',' + color})">
+      <div class="hl-ico" aria-hidden="true">!</div>
       <div class="hl-body">
-        <div class="hl-top"><span class="hl-kind">${esc(k.label)}</span><span class="hl-when">${esc(dayName(h.day))}${h.day > 1 ? ' ' + shortDate(h.day) : ''}</span></div>
+        <div class="hl-top"><span class="hl-kind">Viktigt</span><span class="hl-when">${esc(dayName(h.day))}${h.day > 1 ? ' ' + shortDate(h.day) : ''}</span></div>
         <div class="hl-title">${esc(h.title)}</div>
         ${opts.compact ? '' : `<div class="hl-text">${esc(h.text)}</div>`}
-        <div class="hl-who">${people.map((p) => `<span class="who">${p.emoji} ${esc(p.name)}</span>`).join('')}</div>
+        <div class="hl-who">${people.map((p) => `<span class="who who-tag" style="--c:${p.color}">${p.emoji} ${esc(p.name)}</span>`).join('')}</div>
       </div>
     </article>`;
   }
@@ -144,12 +143,12 @@
       days += `<section class="day" id="dag-${d}">
         <header class="day-head">
           <div><span class="day-name">${esc(dayName(d))}</span> <span class="day-date">${d <= 1 ? fullDate(d).toLowerCase() : shortDate(d)}</span></div>
-          <div class="day-badges">${hls.length ? `<span class="badge badge--hl">${hls.map((x) => HIGHLIGHT_KINDS[x.kind].icon).join(' ')}</span>` : ''}${busy ? '<span class="badge badge--busy">Mycket</span>' : ''}</div>
+          <div class="day-badges">${hls.length ? `<span class="badge badge--hl" aria-label="Viktigt">!</span>` : ''}${busy ? '<span class="badge badge--busy">Mycket</span>' : ''}</div>
         </header>
         ${evs.length ? `<ul class="compact">${evs.map((e) => {
           const p = PEOPLE[e.who];
           const hl = hlForEvent(e.id);
-          return `<li class="${e.type === 'special' ? 'is-special' : ''}"><span class="c-time">${e.start ? esc(e.start) : 'Heldag'}</span><span class="c-dot" style="--c:${p.color}" title="${esc(p.name)}">${p.emoji}</span><span class="c-title">${esc(e.title)}</span>${hl ? `<span class="c-hl">${HIGHLIGHT_KINDS[hl.kind].icon}</span>` : ''}</li>`;
+          return `<li class="${e.type === 'special' ? 'is-special' : ''}"><span class="c-time">${e.start ? esc(e.start) : 'Heldag'}</span><span class="c-dot" style="--c:${p.color}" title="${esc(p.name)}">${p.emoji}</span><span class="c-title">${esc(e.title)}</span>${hl ? `<span class="c-hl" aria-label="Viktigt">!</span>` : ''}</li>`;
         }).join('')}</ul>` : '<p class="empty small">Lugnt</p>'}
       </section>`;
     }

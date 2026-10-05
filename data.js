@@ -89,19 +89,16 @@ const EVENTS = [
 
 /* Highlights – endast saker som kräver uppmärksamhet. */
 const HIGHLIGHT_KINDS = {
-  prov:     { label: 'Prov',     icon: '📝' },
-  packa:    { label: 'Packa',    icon: '🎒' },
-  deadline: { label: 'Deadline', icon: '⏰' },
-  krock:    { label: 'Krock',    icon: '⚠️' }
+  attention: { label: 'Viktigt', icon: '!' }
 };
 
 const HIGHLIGHTS = [
-  { id: 'h1', day: 1, kind: 'prov', who: ['albert'], events: ['e5'],
+  { id: 'h1', day: 1, kind: 'attention', who: ['albert'], events: ['e5'],
     title: 'Glosförhör engelska', text: 'Kapitel 3. Förhör gärna ikväll efter simningen.' },
-  { id: 'h2', day: 3, kind: 'deadline', who: ['georg'], events: ['e11'],
+  { id: 'h2', day: 3, kind: 'attention', who: ['georg'], events: ['e11'],
     title: 'Anmälan skogsutflykt', text: 'Sista dag torsdag: lapp + 50 kr till fröken.' },
-  { id: 'h4', day: 4, kind: 'packa', who: ['georg'], events: ['e15'],
+  { id: 'h4', day: 4, kind: 'attention', who: ['georg'], events: ['e15'],
     title: 'Packa för skogsutflykt', text: 'Matsäck, vattenflaska, regnkläder, stövlar, sittunderlag. Packa torsdag kväll.' },
-  { id: 'h5', day: 5, kind: 'krock', who: ['harry', 'albert'], events: ['e19', 'e20'],
+  { id: 'h5', day: 5, kind: 'attention', who: ['harry', 'albert'], events: ['e19', 'e20'],
     title: 'Två skjutsar lördag morgon', text: 'Albert 08:30 och Harry 08:45 – olika platser. Vem kör vem?' }
 ];
