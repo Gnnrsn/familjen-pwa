@@ -396,9 +396,18 @@ details[open] .chev { transform: rotate(90deg); }
 }
 .attn.hl-tag { margin-top: 8px; }
 .attn.badge {
-  font-size: 12px;
-  padding: 4px 10px;
-  min-height: 28px;
+  font-size: 14px;
+  padding: 6px 12px;
+  min-height: 36px;
+  min-width: 36px;
+}
+.attn.attn--day {
+  position: relative;
+  z-index: 2;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 18px;
+  font-weight: 800;
 }
 .attn.hl-ico {
   font-size: 22px;
@@ -421,16 +430,16 @@ details[open] .chev { transform: rotate(90deg); }
 }
 .attn-pop {
   position: fixed;
-  z-index: 50;
-  max-width: min(240px, calc(100vw - 24px));
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: var(--card-soft);
-  color: var(--hl-text);
+  z-index: 100;
+  max-width: min(260px, calc(100vw - 24px));
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #3a3428;
+  color: #f5d78e;
   border: 1px solid var(--hl-line);
-  box-shadow: var(--shadow);
-  font-size: 14px;
-  font-weight: 600;
+  box-shadow: 0 8px 28px rgba(0,0,0,.45);
+  font-size: 15px;
+  font-weight: 650;
   letter-spacing: 0.01em;
   line-height: 1.35;
   pointer-events: none;

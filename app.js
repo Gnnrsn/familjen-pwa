@@ -35,8 +35,8 @@
   const eventsOn = (day, filter) => EVENTS.filter((e) => e.day === day && (!filter || filter(e))).sort(byTime);
   const hlForEvent = (id) => HIGHLIGHTS.find((h) => h.events.includes(id));
   const reasonsForDay = (d) => {
-    const rs = HIGHLIGHTS.filter((h) => h.day === d && h.reason).map((h) => h.reason);
-    return [...new Set(rs)];
+    const rs = HIGHLIGHTS.filter((h) => h.day === d).map((h) => h.reason || h.title);
+    return [...new Set(rs.filter(Boolean))];
   };
 
   /* ---------- Byggstenar ---------- */
@@ -172,7 +172,7 @@
       days += `<section class="day" id="dag-${d}">
         <header class="day-head">
           <div><span class="day-name">${esc(dayName(d))}</span> <span class="day-date">${d <= 1 ? fullDate(d).toLowerCase() : shortDate(d)}</span></div>
-          <div class="day-badges">${hls.length ? attnBtn(dayReasons, 'badge badge--hl') : ''}${busy ? '<span class="badge badge--busy">Mycket</span>' : ''}</div>
+          <div class="day-badges">${hls.length ? attnBtn(dayReasons, 'badge badge--hl attn--day') : ''}${busy ? '<span class="badge badge--busy">Mycket</span>' : ''}</div>
         </header>
         ${evs.length ? `<div class="compact">${evs.map((e) => compactEvent(e)).join('')}</div>` : '<p class="empty small">Lugnt</p>'}
       </section>`;
@@ -240,30 +240,33 @@
 
   /* Popover för "!"-reason */
   let $pop = null;
+  let attnIgnoreScrollUntil = 0;
   function closeAttn() {
     if ($pop) { $pop.remove(); $pop = null; }
     document.querySelectorAll('.attn[aria-expanded="true"]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
   }
   function openAttn(btn) {
-    const reason = btn.getAttribute('data-reason') || '';
+    const reason = (btn.getAttribute('data-reason') || '').trim();
     const wasOpen = btn.getAttribute('aria-expanded') === 'true';
     closeAttn();
     if (wasOpen || !reason) return;
     btn.setAttribute('aria-expanded', 'true');
     $pop = document.createElement('div');
     $pop.className = 'attn-pop';
-    $pop.setAttribute('role', 'tooltip');
+    $pop.setAttribute('role', 'status');
     $pop.textContent = reason;
     document.body.appendChild($pop);
     const r = btn.getBoundingClientRect();
-    const pw = $pop.offsetWidth;
-    const ph = $pop.offsetHeight;
+    const pw = $pop.offsetWidth || 160;
+    const ph = $pop.offsetHeight || 36;
     let left = r.left + r.width / 2 - pw / 2;
     left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
-    let top = r.bottom + 8;
-    if (top + ph > window.innerHeight - 8) top = r.top - ph - 8;
+    let top = r.bottom + 10;
+    if (top + ph > window.innerHeight - 12) top = Math.max(8, r.top - ph - 10);
     $pop.style.left = left + 'px';
     $pop.style.top = top + 'px';
+    // iOS often fires a scroll on tap; ignore briefly so the popover stays open
+    attnIgnoreScrollUntil = Date.now() + 500;
   }
 
   function render() {
@@ -326,7 +329,7 @@
   document.addEventListener('keydown', (ev) => {
     if (ev.key === 'Escape') closeAttn();
   });
-  window.addEventListener('scroll', () => { if ($pop) closeAttn(); }, { passive: true });
+  window.addEventListener('scroll', () => { if ($pop && Date.now() > attnIgnoreScrollUntil) closeAttn(); }, { passive: true });
 
   // Statisk header-info
   document.getElementById('today-label').textContent = fullDate(0);

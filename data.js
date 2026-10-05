@@ -117,10 +117,10 @@ const HIGHLIGHT_KINDS = {
 
 const HIGHLIGHTS = [
   { id: 'h1', day: 1, kind: 'attention', who: ['albert'], events: ['e5'],
-    reason: 'prov',
+    reason: 'glosförhör',
     title: 'Glosförhör engelska', text: 'Kapitel 3. Förhör gärna ikväll efter simningen.' },
   { id: 'h2', day: 3, kind: 'attention', who: ['georg'], events: ['e11'],
-    reason: 'deadline',
+    reason: 'deadline anmälan',
     title: 'Anmälan skogsutflykt', text: 'Sista dag torsdag: lapp + 50 kr till fröken.' },
   { id: 'h4', day: 4, kind: 'attention', who: ['georg'], events: ['e15'],
     reason: 'packa matsäck',
