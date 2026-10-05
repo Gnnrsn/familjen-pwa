@@ -92,7 +92,6 @@ const HIGHLIGHT_KINDS = {
   prov:     { label: 'Prov',     icon: '📝' },
   packa:    { label: 'Packa',    icon: '🎒' },
   deadline: { label: 'Deadline', icon: '⏰' },
-  logistik: { label: 'Logistik', icon: '🚗' },
   krock:    { label: 'Krock',    icon: '⚠️' }
 };
 
@@ -101,8 +100,6 @@ const HIGHLIGHTS = [
     title: 'Glosförhör engelska', text: 'Kapitel 3. Förhör gärna ikväll efter simningen.' },
   { id: 'h2', day: 3, kind: 'deadline', who: ['georg'], events: ['e11'],
     title: 'Anmälan skogsutflykt', text: 'Sista dag torsdag: lapp + 50 kr till fröken.' },
-  { id: 'h3', day: 3, kind: 'logistik', who: ['harry'], events: ['e12', 'e13'],
-    title: 'Tight byte fotboll → trummor', text: 'Fotbollen slutar 18:30, trumlektionen börjar 18:45 på annan plats. Skjuts direkt.' },
   { id: 'h4', day: 4, kind: 'packa', who: ['georg'], events: ['e15'],
     title: 'Packa för skogsutflykt', text: 'Matsäck, vattenflaska, regnkläder, stövlar, sittunderlag. Packa torsdag kväll.' },
   { id: 'h5', day: 5, kind: 'krock', who: ['harry', 'albert'], events: ['e19', 'e20'],

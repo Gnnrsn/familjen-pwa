@@ -7,7 +7,7 @@
   const MONTHS = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli',
     'augusti', 'september', 'oktober', 'november', 'december'];
   const WEEK_DAYS = 7;
-  const BUSY_THRESHOLD = 4; // antal barnaktiviteter för "Fullt"
+  const BUSY_THRESHOLD = 4; // antal barnaktiviteter för "Mycket"
   const isBusy = (d) => eventsOn(d, (e) => e.who !== 'family').length >= BUSY_THRESHOLD;
 
   const [Y, M, D] = MOCK_TODAY.split('-').map(Number);
@@ -144,7 +144,7 @@
       days += `<section class="day" id="dag-${d}">
         <header class="day-head">
           <div><span class="day-name">${esc(dayName(d))}</span> <span class="day-date">${d <= 1 ? fullDate(d).toLowerCase() : shortDate(d)}</span></div>
-          <div class="day-badges">${hls.length ? `<span class="badge badge--hl">${hls.map((x) => HIGHLIGHT_KINDS[x.kind].icon).join(' ')}</span>` : ''}${busy ? '<span class="badge badge--busy">Fullt</span>' : ''}</div>
+          <div class="day-badges">${hls.length ? `<span class="badge badge--hl">${hls.map((x) => HIGHLIGHT_KINDS[x.kind].icon).join(' ')}</span>` : ''}${busy ? '<span class="badge badge--busy">Mycket</span>' : ''}</div>
         </header>
         ${evs.length ? `<ul class="compact">${evs.map((e) => {
           const p = PEOPLE[e.who];

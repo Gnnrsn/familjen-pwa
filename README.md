@@ -6,7 +6,7 @@ inga API-nycklar, ingen riktig kalender.
 ## Flikar
 - **Idag** – dagens plan + "Tänk på" (det som kräver koll idag/imorgon).
 - **Vecka** – översiktsrutnät barn × dagar + kompakt lista per dag.
-- **Highlights** – bara prov, deadlines, packlistor, logistik och krockar.
+- **Highlights** – bara prov, deadlines, packlistor och krockar.
 - **Barn** – välj Harry 🔴 / Albert 🟢 / Georg 🟡 för en personlig vy.
 
 Tryck på en aktivitet med `›` för detaljer (anteckningar, packlista, länkar).
