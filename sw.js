@@ -1,11 +1,11 @@
 /* Familjen – service worker: cachar statiska filer så appen fungerar offline. */
-const CACHE = 'familjen-v9-1930';
+const CACHE = 'familjen-v10-1933';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
-  './data.js?v=9',
-  './app.js?v=9',
+  './data.js?v=10',
+  './app.js?v=10',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-180.png',

@@ -9,6 +9,13 @@
   const WEEK_DAYS = 7;
   const BUSY_THRESHOLD = 4; // antal barnaktiviteter för "Mycket"
   const isBusy = (d) => eventsOn(d, (e) => e.who !== 'family').length >= BUSY_THRESHOLD;
+  const busyReason = (d) => {
+    const kids = CHILDREN.filter((c) => eventsOn(d, (e) => e.who === c).length > 0);
+    const n = eventsOn(d, (e) => e.who !== 'family').length;
+    if (!kids.length) return `${n} aktiviteter`;
+    const names = kids.map((c) => PEOPLE[c].name).join(', ');
+    return `${n} aktiviteter · ${names}`;
+  };
 
   const [Y, M, D] = MOCK_TODAY.split('-').map(Number);
   const dateFor = (offset) => new Date(Y, M - 1, D + offset);
@@ -46,13 +53,14 @@
     return `<div class="ev-time"><b>${esc(e.start)}</b>${e.end ? `<span>${esc(e.end)}</span>` : ''}</div>`;
   }
 
-  /** Kort "!" som öppnar reason-popover. reason kan vara sträng eller komma-separerad lista. */
-  function attnBtn(reason, extraClass) {
+  /** Tappable mark that opens a short reason popover. label defaults to "!". */
+  function attnBtn(reason, extraClass, label) {
     if (!reason) return '';
     const r = Array.isArray(reason) ? reason.join(' · ') : reason;
     if (!r) return '';
     const cls = ['attn', extraClass].filter(Boolean).join(' ');
-    return `<button type="button" class="${cls}" data-reason="${esc(r)}" aria-label="Viktigt: ${esc(r)}" aria-expanded="false">!</button>`;
+    const text = label == null ? '!' : label;
+    return `<button type="button" class="${cls}" data-reason="${esc(r)}" aria-label="${esc(text)}: ${esc(r)}" aria-expanded="false">${esc(text)}</button>`;
   }
 
   function detailsHtml(e) {
@@ -174,7 +182,7 @@
       days += `<section class="day" id="dag-${d}">
         <header class="day-head">
           <div><span class="day-name">${esc(dayName(d))}</span> <span class="day-date">${d <= 1 ? fullDate(d).toLowerCase() : shortDate(d)}</span></div>
-          <div class="day-badges">${hls.length ? attnBtn(dayReasons, 'badge badge--hl attn--day') : ''}${busy ? '<span class="badge badge--busy">Mycket</span>' : ''}</div>
+          <div class="day-badges">${hls.length ? attnBtn(dayReasons, 'badge badge--hl attn--day') : ''}${busy ? attnBtn(busyReason(d), 'badge badge--busy attn--day', 'Mycket') : ''}</div>
         </header>
         ${evs.length ? `<div class="compact">${evs.map((e) => compactEvent(e)).join('')}</div>` : '<p class="empty small">Lugnt</p>'}
       </section>`;
