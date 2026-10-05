@@ -1,11 +1,11 @@
 /* Familjen – service worker: cachar statiska filer så appen fungerar offline. */
-const CACHE = 'familjen-v1';
+const CACHE = 'familjen-v3-1849';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
-  './data.js',
-  './app.js',
+  './data.js?v=3',
+  './app.js?v=3',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-180.png',
@@ -30,6 +30,21 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  const networkFirst = req.mode === 'navigate' || /\.(js|html|webmanifest)$/.test(url.pathname);
+  if (networkFirst) {
+    e.respondWith(
+      fetch(req).then((res) => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+        }
+        return res;
+      }).catch(() => caches.match(req, { ignoreSearch: true })
+        .then((hit) => hit || (req.mode === 'navigate' ? caches.match('./index.html') : undefined)))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(req, { ignoreSearch: true }).then((hit) => {
       if (hit) return hit;
@@ -39,7 +54,7 @@ self.addEventListener('fetch', (e) => {
           caches.open(CACHE).then((c) => c.put(req, copy));
         }
         return res;
-      }).catch(() => (req.mode === 'navigate' ? caches.match('./index.html') : undefined));
+      });
     })
   );
 });
