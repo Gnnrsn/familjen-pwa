@@ -25,9 +25,6 @@ const EVENTS = [
     title: 'Fotbollsträning', place: 'Fotbollsplanen' },
   { id: 'e3', day: 0, start: '17:30', end: '18:30', who: 'albert', type: 'routine',
     title: 'Simning', place: 'Simhallen' },
-  { id: 'e4', day: 0, start: '18:45', end: '19:30', who: 'family', type: 'routine',
-    title: 'Middag', place: 'Hemma' },
-
   // ---- Dag 1 (tisdag) ----
   { id: 'e5', day: 1, start: '09:00', end: '09:30', who: 'albert', type: 'special',
     title: 'Glosförhör engelska', place: 'Skolan',
@@ -87,9 +84,7 @@ const EVENTS = [
 
   // ---- Dag 6 (söndag) ----
   { id: 'e22', day: 6, start: '10:00', end: '11:00', who: 'albert', type: 'routine',
-    title: 'Simning (extrapass)', place: 'Simhallen' },
-  { id: 'e23', day: 6, start: '16:00', end: '19:00', who: 'family', type: 'routine',
-    title: 'Middag hos farmor', place: 'Hos farmor' }
+    title: 'Simning (extrapass)', place: 'Simhallen' }
 ];
 
 /* Highlights – endast saker som kräver uppmärksamhet. */
