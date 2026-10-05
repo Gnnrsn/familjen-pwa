@@ -78,8 +78,6 @@ const EVENTS = [
     title: 'Gymnastik' },
   { id: 'e17', day: 4, start: '18:00', end: '19:15', who: 'harry', type: 'routine',
     title: 'Innebandy' },
-  { id: 'e18', day: 4, start: '18:00', end: '20:00', who: 'family', type: 'routine',
-    title: 'Fredagsmys' },
 
   // ---- Dag 5 (lördag) ----
   { id: 'e19', day: 5, start: '08:45', end: '11:00', who: 'harry', type: 'special',
