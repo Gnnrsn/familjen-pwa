@@ -7,15 +7,6 @@
   const MONTHS = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli',
     'augusti', 'september', 'oktober', 'november', 'december'];
   const WEEK_DAYS = 7;
-  const BUSY_THRESHOLD = 4; // antal barnaktiviteter för "Mycket"
-  const isBusy = (d) => eventsOn(d, (e) => e.who !== 'family').length >= BUSY_THRESHOLD;
-  const busyReason = (d) => {
-    const kids = CHILDREN.filter((c) => eventsOn(d, (e) => e.who === c).length > 0);
-    const n = eventsOn(d, (e) => e.who !== 'family').length;
-    if (!kids.length) return `${n} aktiviteter`;
-    const names = kids.map((c) => PEOPLE[c].name).join(', ');
-    return `${n} aktiviteter · ${names}`;
-  };
 
   const [Y, M, D] = MOCK_TODAY.split('-').map(Number);
   const dateFor = (offset) => new Date(Y, M - 1, D + offset);
@@ -41,26 +32,12 @@
   const byTime = (a, b) => (a.start || '00:00').localeCompare(b.start || '00:00');
   const eventsOn = (day, filter) => EVENTS.filter((e) => e.day === day && (!filter || filter(e))).sort(byTime);
   const hlForEvent = (id) => HIGHLIGHTS.find((h) => h.events.includes(id));
-  const reasonsForDay = (d) => {
-    const rs = HIGHLIGHTS.filter((h) => h.day === d).map((h) => h.reason || h.title);
-    return [...new Set(rs.filter(Boolean))];
-  };
 
   /* ---------- Byggstenar ---------- */
 
   function timeHtml(e) {
     if (!e.start) return '<div class="ev-time"><span class="allday">Hela dagen</span></div>';
     return `<div class="ev-time"><b>${esc(e.start)}</b>${e.end ? `<span>${esc(e.end)}</span>` : ''}</div>`;
-  }
-
-  /** Tappable mark that opens a short reason popover. label defaults to "!". */
-  function attnBtn(reason, extraClass, label) {
-    if (!reason) return '';
-    const r = Array.isArray(reason) ? reason.join(' · ') : reason;
-    if (!r) return '';
-    const cls = ['attn', extraClass].filter(Boolean).join(' ');
-    const text = label == null ? '!' : label;
-    return `<button type="button" class="${cls}" data-reason="${esc(r)}" aria-label="${esc(text)}: ${esc(r)}" aria-expanded="false">${esc(text)}</button>`;
   }
 
   function detailsHtml(e) {
@@ -88,13 +65,11 @@
     const hl = hlForEvent(e.id);
     const cls = ['ev', e.type === 'special' ? 'ev--special' : 'ev--routine', hl ? 'ev--hl' : ''].join(' ');
     const whoTag = opts.hideWho ? '' : `<span class="who who-tag">${p.emoji} ${esc(p.name)}</span>`;
-    const hlTag = hl ? attnBtn(hl.reason || 'viktigt', 'hl-tag') : '';
     const inner = `
       ${timeHtml(e)}
       <div class="ev-body">
         <div class="ev-title">${esc(e.title)}</div>
         <div class="ev-meta">${whoTag}${e.soloTransit && e.place ? `<span class="place">${esc(e.place)}</span>` : ''}</div>
-        ${hlTag}
       </div>`;
     return `<details class="${cls}" style="--c:${p.color}">
       <summary class="ev-row">${inner}<span class="chev" aria-hidden="true">›</span></summary>
@@ -108,7 +83,6 @@
     const color = people[0].color;
     const stripes = people.map((p) => p.color).join(', ');
     return `<article class="hl" style="--c:${color};--stripes:linear-gradient(${people.length > 1 ? stripes : color + ',' + color})">
-      ${attnBtn(h.reason || 'viktigt', 'hl-ico')}
       <div class="hl-body">
         <div class="hl-top"><span class="hl-kind">Viktigt</span><span class="hl-when">${esc(dayName(h.day))}${h.day > 1 ? ' ' + shortDate(h.day) : ''}</span></div>
         <div class="hl-title">${esc(h.title)}</div>
@@ -120,13 +94,11 @@
 
   function compactEvent(e) {
     const p = PEOPLE[e.who];
-    const hl = hlForEvent(e.id);
     return `<details class="compact-ev ${e.type === 'special' ? 'is-special' : ''}">
       <summary class="compact-row">
         <span class="c-time">${e.start ? esc(e.start) : 'Heldag'}</span>
         <span class="c-dot" style="--c:${p.color}" title="${esc(p.name)}">${p.emoji}</span>
         <span class="c-title">${esc(e.title)}</span>
-        ${hl ? attnBtn(hl.reason || 'viktigt', 'c-hl') : ''}
         <span class="chev chev--sm" aria-hidden="true">›</span>
       </summary>
       <div class="compact-details">${detailsHtml(e)}</div>
@@ -157,8 +129,7 @@
     const rows = ['harry', 'albert', 'georg'];
     let grid = '<div class="grid" role="table" aria-label="Veckoöversikt"><div class="grid-row grid-head" role="row"><div class="grid-label"></div>';
     for (let d = 0; d < WEEK_DAYS; d++) {
-      const busy = isBusy(d);
-      grid += `<a class="grid-day ${d === 0 ? 'is-today' : ''} ${busy ? 'is-busy' : ''}" href="#dag-${d}" role="columnheader">${DAYS_SHORT[dateFor(d).getDay()]}<small>${dateFor(d).getDate()}</small></a>`;
+      grid += `<a class="grid-day ${d === 0 ? 'is-today' : ''}" href="#dag-${d}" role="columnheader">${DAYS_SHORT[dateFor(d).getDay()]}<small>${dateFor(d).getDate()}</small></a>`;
     }
     grid += '</div>';
     rows.forEach((w) => {
@@ -171,18 +142,14 @@
       }
       grid += '</div>';
     });
-    grid += '</div><p class="legend"><span class="pip pip--demo">2</span> antal aktiviteter · <span class="pip pip--demo pip--hl">1</span> kräver koll</p>';
+    grid += '</div><p class="legend"><span class="pip pip--demo">2</span> antal aktiviteter · <span class="pip pip--demo pip--hl">1</span> i Highlights</p>';
 
     let days = '';
     for (let d = 0; d < WEEK_DAYS; d++) {
       const evs = eventsOn(d);
-      const hls = HIGHLIGHTS.filter((x) => x.day === d);
-      const busy = isBusy(d);
-      const dayReasons = reasonsForDay(d);
       days += `<section class="day" id="dag-${d}">
         <header class="day-head">
           <div><span class="day-name">${esc(dayName(d))}</span> <span class="day-date">${d <= 1 ? fullDate(d).toLowerCase() : shortDate(d)}</span></div>
-          <div class="day-badges">${hls.length ? attnBtn(dayReasons, 'badge badge--hl attn--day') : ''}${busy ? attnBtn(busyReason(d), 'badge badge--busy attn--day', 'Mycket') : ''}</div>
         </header>
         ${evs.length ? `<div class="compact">${evs.map((e) => compactEvent(e)).join('')}</div>` : '<p class="empty small">Lugnt</p>'}
       </section>`;
@@ -248,39 +215,7 @@
 
   const $view = document.getElementById('view');
 
-  /* Popover för "!"-reason */
-  let $pop = null;
-  let attnIgnoreScrollUntil = 0;
-  function closeAttn() {
-    if ($pop) { $pop.remove(); $pop = null; }
-    document.querySelectorAll('.attn[aria-expanded="true"]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
-  }
-  function openAttn(btn) {
-    const reason = (btn.getAttribute('data-reason') || '').trim();
-    const wasOpen = btn.getAttribute('aria-expanded') === 'true';
-    closeAttn();
-    if (wasOpen || !reason) return;
-    btn.setAttribute('aria-expanded', 'true');
-    $pop = document.createElement('div');
-    $pop.className = 'attn-pop';
-    $pop.setAttribute('role', 'status');
-    $pop.textContent = reason;
-    document.body.appendChild($pop);
-    const r = btn.getBoundingClientRect();
-    const pw = $pop.offsetWidth || 160;
-    const ph = $pop.offsetHeight || 36;
-    let left = r.left + r.width / 2 - pw / 2;
-    left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
-    let top = r.bottom + 10;
-    if (top + ph > window.innerHeight - 12) top = Math.max(8, r.top - ph - 10);
-    $pop.style.left = left + 'px';
-    $pop.style.top = top + 'px';
-    // iOS often fires a scroll on tap; ignore briefly so the popover stays open
-    attnIgnoreScrollUntil = Date.now() + 500;
-  }
-
   function render() {
-    closeAttn();
     const v = VIEWS[state.tab];
     document.getElementById('view-title').textContent = v.title;
     document.title = `${v.title} · Familjen`;
@@ -307,15 +242,6 @@
     if (b) go(b.dataset.tab);
   });
 
-  // Capture so "!" inside <summary> does not also toggle <details>
-  $view.addEventListener('click', (ev) => {
-    const attn = ev.target.closest('.attn');
-    if (!attn || !$view.contains(attn)) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    openAttn(attn);
-  }, true);
-
   $view.addEventListener('click', (ev) => {
     const pick = ev.target.closest('.pick');
     if (pick) {
@@ -331,15 +257,6 @@
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   });
-
-  // Klick utanför stänger popover; klick på popover själv gör inget
-  document.addEventListener('click', (ev) => {
-    if ($pop && !ev.target.closest('.attn') && !ev.target.closest('.attn-pop')) closeAttn();
-  });
-  document.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Escape') closeAttn();
-  });
-  window.addEventListener('scroll', () => { if ($pop && Date.now() > attnIgnoreScrollUntil) closeAttn(); }, { passive: true });
 
   // Statisk header-info
   document.getElementById('today-label').textContent = fullDate(0);

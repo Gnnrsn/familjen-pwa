@@ -100,23 +100,14 @@ const EVENTS = [
     transit: 'SL: buss 4 → Idrottshallen, ~18 min' }
 ];
 
-/* Highlights – endast saker som kräver uppmärksamhet.
-   reason: kort svensk fras som visas när man trycker på "!" */
-const HIGHLIGHT_KINDS = {
-  attention: { label: 'Viktigt', icon: '!' }
-};
-
+/* Highlights – endast saker som kräver uppmärksamhet. */
 const HIGHLIGHTS = [
   { id: 'h1', day: 1, kind: 'attention', who: ['albert'], events: ['e5'],
-    reason: 'glosförhör',
     title: 'Glosförhör engelska', text: 'Kapitel 3. Förhör gärna ikväll efter handbollen.' },
   { id: 'h2', day: 3, kind: 'attention', who: ['georg'], events: ['e11'],
-    reason: 'deadline anmälan',
     title: 'Anmälan skogsutflykt', text: 'Sista dag torsdag: lapp + 50 kr till fröken.' },
   { id: 'h4', day: 4, kind: 'attention', who: ['georg'], events: ['e15'],
-    reason: 'packa matsäck',
     title: 'Packa för skogsutflykt', text: 'Matsäck, vattenflaska, regnkläder, stövlar, sittunderlag. Packa torsdag kväll.' },
   { id: 'h5', day: 5, kind: 'attention', who: ['harry', 'albert'], events: ['e19', 'e20'],
-    reason: 'schemakrock',
     title: 'Två skjutsar lördag morgon', text: 'Albert 08:30 och Harry 08:45 – olika platser. Vem kör vem?' }
 ];
