@@ -58,9 +58,11 @@
   function detailsHtml(e) {
     const d = e.details || {};
     let h = '';
-    if (e.place) h += `<p class="ev-place"><span class="lbl">📍 Plats</span> ${esc(e.place)}</p>`;
-    const transit = e.transit || 'SL: buss 144 → hållplats Skolan, ~12 min';
-    h += `<p class="ev-transit"><span class="lbl">🚌 Resa</span> ${esc(transit)}</p>`;
+    // Plats/Resa endast vid ensam kollektivresa (mock: Albert handboll)
+    if (e.soloTransit) {
+      if (e.place) h += `<p class="ev-place"><span class="lbl">📍 Plats</span> ${esc(e.place)}</p>`;
+      if (e.transit) h += `<p class="ev-transit"><span class="lbl">🚌 Resa</span> ${esc(e.transit)}</p>`;
+    }
     if (d.notes) h += `<p class="ev-notes">${esc(d.notes)}</p>`;
     if (d.pack && d.pack.length) {
       h += `<div class="ev-pack"><div class="lbl">🎒 Packlista</div><ul>${d.pack.map((p) => `<li>${esc(p)}</li>`).join('')}</ul></div>`;
@@ -69,7 +71,7 @@
       h += `<ul class="ev-links">${d.links.map((l) =>
         `<li><a href="${esc(l.url)}" target="_blank" rel="noopener">📎 ${esc(l.label)}</a></li>`).join('')}</ul>`;
     }
-    return h;
+    return h || '<p class="ev-notes muted">Ingen extra info</p>';
   }
 
   function eventCard(e, opts) {
@@ -83,7 +85,7 @@
       ${timeHtml(e)}
       <div class="ev-body">
         <div class="ev-title">${esc(e.title)}</div>
-        <div class="ev-meta">${whoTag}${e.place ? `<span class="place">${esc(e.place)}</span>` : ''}</div>
+        <div class="ev-meta">${whoTag}${e.soloTransit && e.place ? `<span class="place">${esc(e.place)}</span>` : ''}</div>
         ${hlTag}
       </div>`;
     return `<details class="${cls}" style="--c:${p.color}">
