@@ -1,6 +1,6 @@
 /* Lokala tester – inget nätverk. Kör: node test/mapping.test.js */
 import assert from 'node:assert/strict';
-import { parseTransit, htmlToText, cleanTitle, mapEvent, parseTitle, buildEvents, roleFor, calendarsForRole, stockholmOffset, dayDiff } from '../lib/mapping.js';
+import { weekWindow, isoWeek, isoWeekday, parseTransit, htmlToText, cleanTitle, mapEvent, parseTitle, buildEvents, roleFor, calendarsForRole, stockholmOffset, dayDiff } from '../lib/mapping.js';
 import worker from '../worker/src/index.js';
 import { verifyAccessJwt } from '../lib/api.js';
 import { onRequest as pagesApi } from '../functions/api/[[path]].js';
@@ -112,6 +112,27 @@ await t('Resa-parsning: Google-HTML', () => {
   assert.equal(ev.soloTransit, true); assert.equal(ev.place, 'Hallen'); assert.equal(ev.transit, 'Buss 4 & 6\nKliv av vid Hallen');
   const g = mapEvent({ id: 'y', summary: '🔴 Harry | Fotboll', location: 'Planen', description: h, start: { dateTime: '2026-10-12T15:00:00Z' } }, TODAY);
   assert.equal(g.transit, undefined); assert.equal(g.place, undefined);
+});
+await t('API-fönster: mån denna vecka – sön nästa vecka', () => {
+  let w = weekWindow('2026-10-14'); // onsdag
+  assert.equal(w.startYmd, '2026-10-12'); assert.equal(w.endYmd, '2026-10-25');
+  assert.equal(w.timeMin, '2026-10-12T00:00:00+02:00');
+  assert.equal(w.timeMax, '2026-10-26T00:00:00+01:00'); // DST slutar 25 okt
+  w = weekWindow('2026-10-12'); assert.equal(w.startYmd, '2026-10-12'); assert.equal(w.endYmd, '2026-10-25'); // måndag
+  w = weekWindow('2026-10-11'); assert.equal(w.startYmd, '2026-10-05'); assert.equal(w.endYmd, '2026-10-18'); // söndag
+  assert.equal(isoWeekday('2026-10-11'), 7);
+  w = weekWindow('2026-03-25'); // vecka med sommartidsstart 29 mars
+  assert.equal(w.timeMin, '2026-03-23T00:00:00+01:00'); assert.equal(w.timeMax, '2026-04-06T00:00:00+02:00');
+  assert.equal(dayDiff('2026-03-25', w.endYmd), 11);
+  // negativ dag-offset för passerad dag denna vecka
+  assert.equal(mapEvent({ id: 'p', summary: 'X', start: { dateTime: '2026-10-12T08:00:00Z' } }, '2026-10-14').day, -2);
+  assert.equal(mapEvent({ id: 'q', summary: 'Y', start: { dateTime: '2026-10-25T22:30:00Z' } }, '2026-10-14').day, 11); // 23:30 sön 25/10 (CET) = sista dagen i fönstret
+});
+await t('ISO-veckonummer inkl. årsskifte', () => {
+  assert.equal(isoWeek('2026-10-05'), 41); assert.equal(isoWeek('2026-10-12'), 42);
+  assert.equal(isoWeek('2026-01-01'), 1); assert.equal(isoWeek('2025-12-29'), 1);
+  assert.equal(isoWeek('2027-01-01'), 53); assert.equal(isoWeek('2026-12-31'), 53); assert.equal(isoWeek('2027-01-04'), 1);
+  assert.equal(isoWeek('2021-01-03'), 53); assert.equal(isoWeek('2024-12-30'), 1);
 });
 await t('ROLE_MAP', () => {
   const m = JSON.stringify({ 'Anders@Example.com': 'parent', 'h@example.com': 'harry', 'x@example.com': 'admin' });

@@ -395,3 +395,7 @@ details[open] > .compact-row .chev--sm { transform: rotate(90deg); }
 
 .ev-transit-list { margin: .25rem 0 0 1.1rem; padding: 0; }
 .ev-transit-list li { margin: .1rem 0; }
+
+/* Vecka: två veckor, passerade dagar svagt nedtonade */
+.week-title { margin-top: .25rem; }
+.grid-day.is-past, .grid-cell.is-past, .day.is-past { opacity: .55; }

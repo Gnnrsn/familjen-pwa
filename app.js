@@ -18,6 +18,14 @@ function familjenBoot(LIVE) {
 
   const [Y, M, D] = MOCK_TODAY_.split('-').map(Number);
   const dateFor = (offset) => new Date(Y, M - 1, D + offset);
+  // Måndag denna vecka relativt idag (negativ eller 0), slut = söndag nästa vecka.
+  const MON = 1 - (dateFor(0).getDay() || 7);
+  const END = MON + 13;
+  function isoWeek(dt) {
+    const t = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+    t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+    return Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 86400000 + 1) / 7);
+  }
 
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -137,37 +145,45 @@ function familjenBoot(LIVE) {
     return h;
   }
 
-  function viewVecka() {
+  function weekBlock(first, label) {
     // Endast barn i rutnätet – ingen "Alla"/familje-rad
     const rows = CHILDREN.slice();
-    let grid = '<div class="grid" role="table" aria-label="Veckoöversikt"><div class="grid-row grid-head" role="row"><div class="grid-label"></div>';
-    for (let d = 0; d < WEEK_DAYS; d++) {
-      grid += `<a class="grid-day ${d === 0 ? 'is-today' : ''}" href="#dag-${d}" role="columnheader">${DAYS_SHORT[dateFor(d).getDay()]}<small>${dateFor(d).getDate()}</small></a>`;
-    }
+    const range = Array.from({ length: 7 }, (_, i) => first + i);
+    const cls = (d) => [d === 0 ? 'is-today' : '', d < 0 ? 'is-past' : ''].join(' ');
+    let grid = `<div class="grid" role="table" aria-label="${esc(label)}"><div class="grid-row grid-head" role="row"><div class="grid-label"></div>`;
+    range.forEach((d) => {
+      grid += `<a class="grid-day ${cls(d)}" href="#dag-${d}" role="columnheader">${DAYS_SHORT[dateFor(d).getDay()]}<small>${dateFor(d).getDate()}</small></a>`;
+    });
     grid += '</div>';
     rows.forEach((w) => {
       const p = PEOPLE[w];
       grid += `<div class="grid-row" role="row"><div class="grid-label" title="${esc(p.name)}">${p.emoji}<span>${esc(p.name)}</span></div>`;
-      for (let d = 0; d < WEEK_DAYS; d++) {
+      range.forEach((d) => {
         const n = eventsOn(d, (e) => e.who === w).length;
         const hl = HIGHLIGHTS.some((x) => x.day === d && x.who.includes(w));
-        grid += `<div class="grid-cell" role="cell" style="--c:${p.color}">${n ? `<span class="pip ${hl ? 'pip--hl' : ''}">${n}</span>` : ''}</div>`;
-      }
+        grid += `<div class="grid-cell ${d < 0 ? 'is-past' : ''}" role="cell" style="--c:${p.color}">${n ? `<span class="pip ${hl ? 'pip--hl' : ''}">${n}</span>` : ''}</div>`;
+      });
       grid += '</div>';
     });
-    grid += '</div><p class="legend"><span class="pip pip--demo">2</span> antal aktiviteter · <span class="pip pip--demo pip--hl">1</span> i Highlights</p>';
+    grid += '</div>';
 
     let days = '';
-    for (let d = 0; d < WEEK_DAYS; d++) {
+    range.forEach((d) => {
       const evs = eventsOn(d);
-      days += `<section class="day" id="dag-${d}">
+      days += `<section class="day ${d < 0 ? 'is-past' : ''}" id="dag-${d}">
         <header class="day-head">
-          <div><span class="day-name">${esc(dayName(d))}</span> <span class="day-date">${d <= 1 ? fullDate(d).toLowerCase() : shortDate(d)}</span></div>
+          <div><span class="day-name">${esc(dayName(d))}</span> <span class="day-date">${d === 0 || d === 1 ? fullDate(d).toLowerCase() : shortDate(d)}</span></div>
         </header>
         ${evs.length ? `<div class="compact">${evs.map((e) => compactEvent(e)).join('')}</div>` : '<p class="empty small">Lugnt</p>'}
       </section>`;
-    }
-    return `<section class="section">${grid}</section><section class="section">${days}</section>`;
+    });
+    return `<section class="section week-block"><h2 class="sec-title week-title">${esc(label)}</h2>${grid}</section><section class="section">${days}</section>`;
+  }
+
+  function viewVecka() {
+    const legend = '<p class="legend"><span class="pip pip--demo">2</span> antal aktiviteter · <span class="pip pip--demo pip--hl">1</span> i Highlights</p>';
+    return weekBlock(MON, `Denna vecka (v.${isoWeek(dateFor(MON))})`) + legend
+      + weekBlock(MON + 7, `Nästa vecka (v.${isoWeek(dateFor(MON + 7))})`);
   }
 
   function viewHighlights() {
@@ -188,14 +204,14 @@ function familjenBoot(LIVE) {
     const p = PEOPLE[sel];
     const mine = (e) => e.who === sel || (e.who === 'family' && (!e.about || e.about.includes(sel)));
     const hls = HIGHLIGHTS.filter((x) => x.who.includes(sel) && x.day >= 0 && x.day < WEEK_DAYS);
-    const count = EVENTS.filter((e) => e.who === sel && e.day >= 0 && e.day < WEEK_DAYS).length;
+    const count = EVENTS.filter((e) => e.who === sel && e.day >= 0 && e.day <= END).length;
     h += `<section class="summary child-summary" style="--c:${p.color}">
       <div class="summary-big">${p.emoji} ${esc(p.name)}</div>
-      <div class="summary-small">${count} aktiviteter i veckan${hls.length ? ` · ${hls.length} att ha koll på` : ''}</div>
+      <div class="summary-small">${count} aktiviteter fram till och med nästa vecka${hls.length ? ` · ${hls.length} att ha koll på` : ''}</div>
     </section>`;
     if (hls.length) h += `<section class="section"><h2 class="sec-title">Att ha koll på</h2>${hls.map((x) => hlCard(x)).join('')}</section>`;
-    h += '<section class="section"><h2 class="sec-title">Veckan</h2>';
-    for (let d = 0; d < WEEK_DAYS; d++) {
+    h += '<section class="section"><h2 class="sec-title">Denna och nästa vecka</h2>';
+    for (let d = 0; d <= END; d++) {
       const evs = eventsOn(d, mine);
       h += `<div class="child-day"><h3 class="child-day-title">${esc(dayName(d))} <span>${shortDate(d)}</span></h3>`;
       h += evs.length ? `<div class="list">${evs.map((e) => eventCard(e, { hideWho: e.who === sel })).join('')}</div>` : '<p class="empty small">Ledigt</p>';
