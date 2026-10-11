@@ -1,6 +1,6 @@
 /* Lokala tester – inget nätverk. Kör: node test/mapping.test.js */
 import assert from 'node:assert/strict';
-import { weekWindow, isoWeek, isoWeekday, parseTransit, htmlToText, cleanTitle, mapEvent, parseTitle, buildEvents, roleFor, calendarsForRole, stockholmOffset, dayDiff } from '../lib/mapping.js';
+import { parseNotes, weekWindow, isoWeek, isoWeekday, parseTransit, htmlToText, cleanTitle, mapEvent, parseTitle, buildEvents, roleFor, calendarsForRole, stockholmOffset, dayDiff } from '../lib/mapping.js';
 import worker from '../worker/src/index.js';
 import { verifyAccessJwt } from '../lib/api.js';
 import { onRequest as pagesApi } from '../functions/api/[[path]].js';
@@ -133,6 +133,28 @@ await t('ISO-veckonummer inkl. årsskifte', () => {
   assert.equal(isoWeek('2026-01-01'), 1); assert.equal(isoWeek('2025-12-29'), 1);
   assert.equal(isoWeek('2027-01-01'), 53); assert.equal(isoWeek('2026-12-31'), 53); assert.equal(isoWeek('2027-01-04'), 1);
   assert.equal(isoWeek('2021-01-03'), 53); assert.equal(isoWeek('2024-12-30'), 1);
+});
+await t('notes: HTML + Källa + Resa-block för Albert handboll', () => {
+  const d = '<p>Ta med vattenflaska &amp; skor.</p><p>Källa: klubbens sms</p><p>Resa:<br>- Buss 4 17:05<br>- Kliv av vid Hallen</p><p>Tränare: Eva</p><p>KÄLLOR: mejl</p><br><br><br><br>Slut';
+  const e = mapEvent({ id: 'n1', summary: '🟢 Albert | Handboll', location: 'Hallen', description: d, start: { dateTime: '2026-10-12T15:00:00Z' } }, TODAY);
+  assert.equal(e.transit, 'Buss 4 17:05\nKliv av vid Hallen');
+  assert.equal(e.details.notes, 'Ta med vattenflaska & skor.\nTränare: Eva\n\nSlut');
+  assert.ok(!/Källa|Resa|Buss 4/i.test(e.details.notes));
+});
+await t('notes: skolevent med Plats-rad -> ingen plats, raden bort', () => {
+  const e = mapEvent({ id: 'n2', summary: '🔴 Harry | Matteprov', location: 'Skolan', description: 'Plats: Sal 12\nAdress: Skolvägen 1\nKapitel 4–5\nKälla: Unikum', start: { dateTime: '2026-10-13T07:00:00Z' } }, TODAY);
+  assert.equal(e.place, undefined); assert.equal(e.soloTransit, undefined);
+  assert.equal(e.details.notes, 'Kapitel 4–5');
+  assert.equal(e.type, 'special');
+  // soloTransit behåller Plats-raden i notes
+  assert.equal(parseNotes('Plats: Hallen B', true), 'Plats: Hallen B');
+});
+await t('notes: glosor flera rader bevaras; tom -> ingen details', () => {
+  const d = 'Glosor kapitel 3:<br>dog – hund<br>cat – katt<br>horse – häst';
+  const e = mapEvent({ id: 'n3', summary: '🟢 Albert | Glosförhör', description: d, start: { date: '2026-10-14' } }, TODAY);
+  assert.equal(e.details.notes, 'Glosor kapitel 3:\ndog – hund\ncat – katt\nhorse – häst');
+  assert.equal(mapEvent({ id: 'n4', summary: 'X', description: 'Källa: x', start: { date: '2026-10-14' } }, TODAY).details, undefined);
+  assert.equal(mapEvent({ id: 'n5', summary: 'X', start: { date: '2026-10-14' } }, TODAY).details, undefined);
 });
 await t('ROLE_MAP', () => {
   const m = JSON.stringify({ 'Anders@Example.com': 'parent', 'h@example.com': 'harry', 'x@example.com': 'admin' });

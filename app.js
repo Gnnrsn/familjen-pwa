@@ -69,7 +69,7 @@ function familjenBoot(LIVE) {
           : `<p class="ev-transit"><span class="lbl">🚌 Resa</span> ${esc(lines[0] || '')}</p>`;
       }
     }
-    if (d.notes) h += `<p class="ev-notes">${esc(d.notes)}</p>`;
+    if (d.notes) h += `<p class="ev-notes">${esc(d.notes).replace(/\n/g, '<br>')}</p>`;
     if (d.pack && d.pack.length) {
       h += `<div class="ev-pack"><div class="lbl">🎒 Packlista</div><ul>${d.pack.map((p) => `<li>${esc(p)}</li>`).join('')}</ul></div>`;
     }
