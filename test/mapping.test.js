@@ -50,9 +50,9 @@ await t('rollfiltrering', () => {
   assert.deepEqual(p.events.map((e) => e.id).sort(), ['gf1', 'gf2']); assert.deepEqual(p.highlights, []); // endast CAL_FAMILY
   const h = buildEvents(items, 'harry', TODAY);
   assert.ok(h.events.every((e) => e.who === 'harry' || e.who === 'family'));
-  assert.deepEqual(h.events.map((e) => e.id).sort(), ['gf1', 'gf2', 'gh1']); assert.deepEqual(h.children, ['harry']);
+  assert.deepEqual(h.events.map((e) => e.id).sort(), ['gf1', 'gf2']); assert.deepEqual(h.children, ['harry']);
   const a = buildEvents(items, 'albert', TODAY);
-  assert.deepEqual(a.events.map((e) => e.id).sort(), ['gb1', 'gf1']); // Harrys tandläkare i familjekalendern döljs
+  assert.deepEqual(a.events.map((e) => e.id).sort(), ['gf1']); // Harrys tandläkare i familjekalendern döljs
   assert.ok(!a.events.some((e) => e.who === 'harry'));
 });
 await t('who från källkalender; prefix bara i familjekalendern; emojis bort ur titel', () => {
@@ -71,7 +71,7 @@ await t('type-heuristik', () => {
   assert.equal(mapEvent({ id: 'b', summary: 'Lov', start: { date: '2026-10-12' } }, TODAY).type, 'special');
   assert.equal(mapEvent({ id: 'c', summary: 'Gymnastik', start: { dateTime: '2026-10-12T08:00:00Z' } }, TODAY).type, 'routine');
 });
-await t('barn: dedup mot familjekalendern, syskon bort', () => {
+await t('barn: barn ser bara familjekalendern (sig själv + familj), syskon bort', () => {
   const S = '2026-10-13T15:00:00Z';
   const it = {
     family: [{ id: 'f1', summary: '🔴 Harry | Fotbollsträning', start: { dateTime: S } },
@@ -87,7 +87,7 @@ await t('barn: dedup mot familjekalendern, syskon bort', () => {
     albert: [{ id: 'a1', summary: 'Handboll', start: { dateTime: S } }]
   };
   const h = buildEvents(it, 'harry', TODAY);
-  assert.deepEqual(h.events.map((e) => e.id).sort(), ['gf1', 'gf3', 'gf4', 'gh3', 'gh4', 'gh6']);
+  assert.deepEqual(h.events.map((e) => e.id).sort(), ['gf1', 'gf3', 'gf4']); // barnkalendrar läses inte
   assert.ok(h.events.every((e) => e.who === 'harry' || e.who === 'family'));
   const p = buildEvents(it, 'parent', TODAY);
   assert.deepEqual(p.events.map((e) => e.id).sort(), ['gf1', 'gf2', 'gf3', 'gf4']);
@@ -176,7 +176,7 @@ await t('Pages Function: 401/403/405/404, /api/me 200 no-store, team-domän defa
   assert.equal(r.status, 404);
   r = await pagesApi(ctx('/api/me', { 'Cf-Access-Jwt-Assertion': await mk(good) }));
   assert.equal(r.status, 200); assert.equal(r.headers.get('cache-control'), 'private, no-store');
-  assert.deepEqual(await r.json(), { email: 'h@example.com', role: 'harry', children: ['harry'], calendars: ['family', 'harry'] });
+  assert.deepEqual(await r.json(), { email: 'h@example.com', role: 'harry', children: ['harry'], calendars: ['family'] });
   r = await pagesApi(ctx('/api/me', { 'Cf-Access-Jwt-Assertion': await mk({ ...good, email: 'p@example.com' }) }, 'GET', { ROLE_MAP: JSON.stringify({ 'p@example.com': 'parent' }) }));
   assert.deepEqual((await r.json()).calendars, ['family']);
   r = await pagesApi(ctx('/api/me', { 'Cf-Access-Jwt-Assertion': await mk(good) }, 'GET', { ACCESS_AUD: undefined }));
@@ -215,8 +215,8 @@ await t('Pages Function: /api/events med fejkad Google (token + kalender), Harry
   globalThis.fetch = prev;
   assert.equal(r.status, 200); assert.equal(r.headers.get('cache-control'), 'private, no-store');
   const body = await r.json();
-  assert.deepEqual(body.events.map((x) => x.id).sort(), ['gf', 'gh']);
-  assert.ok(!calls.some((u) => u.includes('albert-id')));
+  assert.deepEqual(body.events.map((x) => x.id).sort(), ['gf']);
+  assert.ok(!calls.some((u) => u.includes('albert-id') || u.includes('harry-id')));
   assert.deepEqual(body.highlights, []);
 });
 await t('Pages Function: förälder hämtar ENDAST CAL_FAMILY', async () => {
