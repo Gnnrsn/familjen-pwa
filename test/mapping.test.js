@@ -1,6 +1,6 @@
 /* Lokala tester – inget nätverk. Kör: node test/mapping.test.js */
 import assert from 'node:assert/strict';
-import { mapEvent, parseTitle, buildEvents, roleFor, calendarsForRole, stockholmOffset, dayDiff } from '../lib/mapping.js';
+import { parseTransit, htmlToText, cleanTitle, mapEvent, parseTitle, buildEvents, roleFor, calendarsForRole, stockholmOffset, dayDiff } from '../lib/mapping.js';
 import worker from '../worker/src/index.js';
 import { verifyAccessJwt } from '../lib/api.js';
 import { onRequest as pagesApi } from '../functions/api/[[path]].js';
@@ -44,16 +44,74 @@ const items = {
   albert: [{ id: 'b1', summary: '🟢 Albert | Handboll', start: { dateTime: '2026-10-12T15:00:00Z' }, location: 'Hallen' }]
 };
 await t('rollfiltrering', () => {
-  assert.deepEqual(calendarsForRole('parent'), ['family', 'harry', 'albert']);
+  assert.deepEqual(calendarsForRole('parent'), ['family']);
   assert.equal(calendarsForRole('okänd'), null);
   const p = buildEvents(items, 'parent', TODAY);
-  assert.equal(p.events.length, 4); assert.deepEqual(p.highlights, []);
+  assert.deepEqual(p.events.map((e) => e.id).sort(), ['gf1', 'gf2']); assert.deepEqual(p.highlights, []); // endast CAL_FAMILY
   const h = buildEvents(items, 'harry', TODAY);
   assert.ok(h.events.every((e) => e.who === 'harry' || e.who === 'family'));
   assert.deepEqual(h.events.map((e) => e.id).sort(), ['gf1', 'gf2', 'gh1']); assert.deepEqual(h.children, ['harry']);
   const a = buildEvents(items, 'albert', TODAY);
   assert.deepEqual(a.events.map((e) => e.id).sort(), ['gb1', 'gf1']); // Harrys tandläkare i familjekalendern döljs
   assert.ok(!a.events.some((e) => e.who === 'harry'));
+});
+await t('who från källkalender; prefix bara i familjekalendern; emojis bort ur titel', () => {
+  const ev = { id: 'x', summary: '⚽ Fotboll', start: { dateTime: '2026-10-12T15:00:00Z' } };
+  assert.equal(mapEvent(ev, TODAY, 0, 'harry').who, 'harry');
+  assert.equal(mapEvent(ev, TODAY, 0, 'albert').who, 'albert');
+  assert.equal(mapEvent(ev, TODAY, 0, 'family').who, 'family');
+  assert.equal(mapEvent(ev, TODAY, 0, 'harry').title, 'Fotboll');
+  // Prefix i barnkalender ändrar inte who
+  assert.equal(mapEvent({ ...ev, summary: '🟢 Albert | Handboll' }, TODAY, 0, 'harry').who, 'harry');
+  assert.equal(mapEvent({ ...ev, summary: '🔴 Harry | Fotboll' }, TODAY, 0, 'family').who, 'harry');
+  assert.equal(cleanTitle('🔴 Harry | ⚽ Match'), 'Match');
+});
+await t('type-heuristik', () => {
+  assert.equal(mapEvent({ id: 'a', summary: 'Matteprov', start: { dateTime: '2026-10-12T08:00:00Z' } }, TODAY).type, 'special');
+  assert.equal(mapEvent({ id: 'b', summary: 'Lov', start: { date: '2026-10-12' } }, TODAY).type, 'special');
+  assert.equal(mapEvent({ id: 'c', summary: 'Gymnastik', start: { dateTime: '2026-10-12T08:00:00Z' } }, TODAY).type, 'routine');
+});
+await t('barn: dedup mot familjekalendern, syskon bort', () => {
+  const S = '2026-10-13T15:00:00Z';
+  const it = {
+    family: [{ id: 'f1', summary: '🔴 Harry | Fotbollsträning', start: { dateTime: S } },
+             { id: 'f2', summary: '🟢 Albert | Handboll', start: { dateTime: S } },
+             { id: 'f3', summary: 'Studiedag', start: { date: '2026-10-14' } },
+             { id: 'f4', summary: '🔴 Harry | Lov', start: { date: '2026-10-15' } }],
+    harry: [{ id: 'h1', summary: '⚽ fotbollsträning ', start: { dateTime: S } },          // dubblett (lika)
+            { id: 'h2', summary: 'Fotboll', start: { dateTime: S } },                       // dubblett (innehåller)
+            { id: 'h3', summary: 'Fotbollsträning', start: { dateTime: '2026-10-13T16:00:00Z' } }, // annan tid – behålls
+            { id: 'h4', summary: 'Innebandy', start: { dateTime: S } },                     // annan titel – behålls
+            { id: 'h5', summary: 'LOV', start: { date: '2026-10-15' } },                    // heldag dubblett
+            { id: 'h6', summary: 'Lov', start: { date: '2026-10-16' } }],                   // annat datum – behålls
+    albert: [{ id: 'a1', summary: 'Handboll', start: { dateTime: S } }]
+  };
+  const h = buildEvents(it, 'harry', TODAY);
+  assert.deepEqual(h.events.map((e) => e.id).sort(), ['gf1', 'gf3', 'gf4', 'gh3', 'gh4', 'gh6']);
+  assert.ok(h.events.every((e) => e.who === 'harry' || e.who === 'family'));
+  const p = buildEvents(it, 'parent', TODAY);
+  assert.deepEqual(p.events.map((e) => e.id).sort(), ['gf1', 'gf2', 'gf3', 'gf4']);
+  const a = buildEvents(it, 'albert', TODAY);
+  assert.deepEqual(a.events.map((e) => e.id).sort(), ['gf2', 'gf3']); // a1 dubblett av f2
+});
+await t('Resa-parsning: text', () => {
+  const d = 'Ta med vattenflaska.\nResa:\n- Gå till busshållplatsen 17:00\n- Buss 4 mot Centrum\n- Kliv av vid Hallen\n\n- inte med\nÖvrigt';
+  assert.equal(parseTransit(d), 'Gå till busshållplatsen 17:00\nBuss 4 mot Centrum\nKliv av vid Hallen');
+  assert.equal(parseTransit('Resa:\n- Buss 4\nPlanerade tider: 17:05\n- inte med'), 'Buss 4');
+  assert.equal(parseTransit('Resa:\n- Buss 4\nUtrustning:\n- skor'), 'Buss 4');
+  assert.equal(parseTransit('resa: \r\n- A\r\n- B'), 'A\nB');
+  assert.equal(parseTransit('Ingen resa här'), ''); assert.equal(parseTransit(undefined), '');
+});
+await t('Resa-parsning: Google-HTML', () => {
+  const h = '<p>Info</p><p>Resa:<br>- Buss 4 &amp; 6<br>- Kliv&nbsp;av vid Hallen</p><p>Planerade tider<br>- 17:05</p>';
+  assert.equal(parseTransit(h), 'Buss 4 & 6\nKliv av vid Hallen');
+  const l = '<b>Resa:</b><ul><li>Buss 4</li><li>Byte till 6</li></ul><br><br>- slut';
+  assert.equal(parseTransit(l), 'Buss 4\nByte till 6');
+  assert.equal(htmlToText('a<br/>b&lt;c'), 'a\nb<c');
+  const ev = mapEvent({ id: 'z', summary: '🟢 Albert | Handboll', location: 'Hallen', description: h, start: { dateTime: '2026-10-12T15:00:00Z' } }, TODAY, 0, 'albert');
+  assert.equal(ev.soloTransit, true); assert.equal(ev.place, 'Hallen'); assert.equal(ev.transit, 'Buss 4 & 6\nKliv av vid Hallen');
+  const g = mapEvent({ id: 'y', summary: '🔴 Harry | Fotboll', location: 'Planen', description: h, start: { dateTime: '2026-10-12T15:00:00Z' } }, TODAY);
+  assert.equal(g.transit, undefined); assert.equal(g.place, undefined);
 });
 await t('ROLE_MAP', () => {
   const m = JSON.stringify({ 'Anders@Example.com': 'parent', 'h@example.com': 'harry', 'x@example.com': 'admin' });
@@ -119,6 +177,8 @@ await t('Pages Function: 401/403/405/404, /api/me 200 no-store, team-domän defa
   r = await pagesApi(ctx('/api/me', { 'Cf-Access-Jwt-Assertion': await mk(good) }));
   assert.equal(r.status, 200); assert.equal(r.headers.get('cache-control'), 'private, no-store');
   assert.deepEqual(await r.json(), { email: 'h@example.com', role: 'harry', children: ['harry'], calendars: ['family', 'harry'] });
+  r = await pagesApi(ctx('/api/me', { 'Cf-Access-Jwt-Assertion': await mk({ ...good, email: 'p@example.com' }) }, 'GET', { ROLE_MAP: JSON.stringify({ 'p@example.com': 'parent' }) }));
+  assert.deepEqual((await r.json()).calendars, ['family']);
   r = await pagesApi(ctx('/api/me', { 'Cf-Access-Jwt-Assertion': await mk(good) }, 'GET', { ACCESS_AUD: undefined }));
   assert.equal(r.status, 401); // saknad ACCESS_AUD => neka
 });
@@ -158,5 +218,21 @@ await t('Pages Function: /api/events med fejkad Google (token + kalender), Harry
   assert.deepEqual(body.events.map((x) => x.id).sort(), ['gf', 'gh']);
   assert.ok(!calls.some((u) => u.includes('albert-id')));
   assert.deepEqual(body.highlights, []);
+});
+await t('Pages Function: förälder hämtar ENDAST CAL_FAMILY', async () => {
+  const { privateKey } = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign']);
+  const pkcs8 = Buffer.from(await crypto.subtle.exportKey('pkcs8', privateKey)).toString('base64');
+  const cals = [], prev = globalThis.fetch;
+  globalThis.fetch = async (u, init) => {
+    u = String(u);
+    if (u.startsWith(TEAM)) return prev(u, init);
+    if (u.includes('oauth2')) return new Response(JSON.stringify({ access_token: 't2', expires_in: 3600 }));
+    const m = u.match(/calendars\/([^/]+)\/events/); if (m) { cals.push(decodeURIComponent(m[1])); return new Response('{"items":[]}'); }
+    throw new Error('oväntat: ' + u);
+  };
+  const e = { ROLE_MAP: JSON.stringify({ 'p@example.com': 'parent' }), GOOGLE_SA_KEY: JSON.stringify({ client_email: 's@x', private_key: `-----BEGIN PRIVATE KEY-----\n${pkcs8}\n-----END PRIVATE KEY-----` }), CAL_FAMILY: 'fam-id', CAL_HARRY: 'harry-id', CAL_ALBERT: 'albert-id' };
+  const r = await pagesApi(ctx('/api/events', { 'Cf-Access-Jwt-Assertion': await mk({ ...good, email: 'p@example.com' }) }, 'GET', e));
+  globalThis.fetch = prev;
+  assert.equal(r.status, 200); assert.deepEqual(cals, ['fam-id']);
 });
 console.log(`\n${n} tester OK`);

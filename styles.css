@@ -392,3 +392,6 @@ details[open] > .compact-row .chev--sm { transform: rotate(90deg); }
   line-height: 1.5;
   color: color-mix(in srgb, var(--text) 82%, var(--muted));
 }
+
+.ev-transit-list { margin: .25rem 0 0 1.1rem; padding: 0; }
+.ev-transit-list li { margin: .1rem 0; }

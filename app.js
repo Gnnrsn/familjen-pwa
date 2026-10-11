@@ -54,7 +54,12 @@ function familjenBoot(LIVE) {
     // Plats/Resa endast vid ensam kollektivresa (mock: Albert handboll)
     if (e.soloTransit) {
       if (e.place) h += `<p class="ev-place"><span class="lbl">📍 Plats</span> ${esc(e.place)}</p>`;
-      if (e.transit) h += `<p class="ev-transit"><span class="lbl">🚌 Resa</span> ${esc(e.transit)}</p>`;
+      if (e.transit) {
+        const lines = String(e.transit).split('\n').map((l) => l.trim()).filter(Boolean);
+        h += lines.length > 1
+          ? `<div class="ev-transit"><span class="lbl">🚌 Resa</span><ul class="ev-transit-list">${lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>`
+          : `<p class="ev-transit"><span class="lbl">🚌 Resa</span> ${esc(lines[0] || '')}</p>`;
+      }
     }
     if (d.notes) h += `<p class="ev-notes">${esc(d.notes)}</p>`;
     if (d.pack && d.pack.length) {

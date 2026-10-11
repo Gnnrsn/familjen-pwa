@@ -95,7 +95,9 @@ Obs: Pages-inställningen *Settings → General → Access policy* skyddar bara 
 ## 4) Testchecklista
 
 - [ ] Öppna `https://familjen.pages.dev` i inkognito → Access-inloggning visas (inte appen).
-- [ ] Logga in som förälder → riktiga händelser visas, **ingen Demo-pill**, alla tre barnen i Vecka/Barn.
+- [ ] Logga in som förälder → riktiga händelser från **endast Familjen-kalendern** (system of record; prefix 🔴/🟢/🟡 avgör barn), **ingen Demo-pill**.
+- [ ] Barn: event som finns både i Familjen (med prefix) och i barnets egen kalender (samma tid, liknande titel) visas bara en gång.
+- [ ] Albert handboll: rader under `Resa:` i beskrivningen (`- ...`) visas som lista under 🚌 Resa.
 - [ ] `https://familjen.pages.dev/api/me` → `{"role":"parent",…}`.
 - [ ] Logga in som Harry → bara Familjen + Harry; Barn-vyn visar endast Harry; inga Albert-händelser.
 - [ ] Logga in som Albert → bara Familjen + Albert; Albert-handboll visar plats (om platsen finns i kalendern), ingen resetext.
