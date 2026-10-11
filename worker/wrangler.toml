@@ -1,0 +1,20 @@
+# VALFRI variant (kräver egen domän). Huvudspår = Pages Functions, se README-step2.md.
+# Familjen API – Cloudflare Worker (Free plan).
+# INGA konto-ID:n, kalender-ID:n eller hemligheter i denna fil (repot är publikt).
+# account_id hämtas av wrangler vid inloggning (eller env CLOUDFLARE_ACCOUNT_ID).
+#
+# Sätts i Cloudflare-dashboarden / via wrangler (se README-step2.md):
+#   Secrets: GOOGLE_SA_KEY, ROLE_MAP
+#   Variabler: CAL_FAMILY, CAL_HARRY, CAL_ALBERT, ACCESS_AUD
+name = "familjen-api"
+main = "src/index.js"  # tunn wrapper runt ../lib/api.js (delad logik)
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+# Route läggs till i dashboarden (Workers > familjen-api > Settings > Domains & Routes)
+# eftersom den kräver en zon i ditt konto, t.ex.:
+#   familjen.<din-domän>/api/*
+# routes = [ { pattern = "familjen.example.se/api/*", zone_name = "example.se" } ]
+
+[vars]
+ACCESS_TEAM_DOMAIN = "https://plain-snow-7fd1.cloudflareaccess.com"

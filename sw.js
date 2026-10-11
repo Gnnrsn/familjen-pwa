@@ -1,11 +1,11 @@
 /* Familjen – service worker: cachar statiska filer så appen fungerar offline. */
-const CACHE = 'familjen-v12-2123';
+const CACHE = 'familjen-v13';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
-  './data.js?v=12',
-  './app.js?v=12',
+  './data.js?v=13',
+  './app.js?v=13',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-180.png',
@@ -29,6 +29,8 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;
+  // /api/* : ENDAST nätverk – cachas aldrig (privat kalenderdata).
+  if (new URL(req.url).pathname.includes('/api/')) return;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   const url = new URL(req.url);
   const networkFirst = req.mode === 'navigate' || /\.(js|html|webmanifest)$/.test(url.pathname);

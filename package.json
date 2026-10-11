@@ -1,0 +1,9 @@
+{
+  "name": "familjen-pwa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test/mapping.test.js",
+    "build": "sh build.sh"
+  }
+}

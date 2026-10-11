@@ -1,6 +1,14 @@
-/* Familjen – Steg 1, visuell prototyp. All data kommer från data.js (mock). */
-(function () {
+/* Familjen – Steg 2. Försöker hämta live-data från /api/events (Worker bakom
+   Cloudflare Access). Vid alla fel används mock-data från data.js + Demo-pill. */
+function familjenBoot(LIVE) {
   'use strict';
+  /* Skuggar de globala mock-konstanterna från data.js när live-data finns. */
+  const MOCK_TODAY_ = LIVE ? LIVE.today : MOCK_TODAY;
+  const EVENTS = LIVE ? LIVE.events : window.MOCK_EVENTS;
+  const HIGHLIGHTS = LIVE ? (LIVE.highlights || []) : window.MOCK_HIGHLIGHTS;
+  const CHILDREN = LIVE && Array.isArray(LIVE.children) ? LIVE.children : window.MOCK_CHILDREN;
+  const pill = document.querySelector('.demo-pill');
+  if (pill) pill.hidden = !!LIVE;
 
   const DAYS = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
   const DAYS_SHORT = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
@@ -8,7 +16,7 @@
     'augusti', 'september', 'oktober', 'november', 'december'];
   const WEEK_DAYS = 7;
 
-  const [Y, M, D] = MOCK_TODAY.split('-').map(Number);
+  const [Y, M, D] = MOCK_TODAY_.split('-').map(Number);
   const dateFor = (offset) => new Date(Y, M - 1, D + offset);
 
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
@@ -61,7 +69,7 @@
 
   function eventCard(e, opts) {
     opts = opts || {};
-    const p = PEOPLE[e.who];
+    const p = PEOPLE[e.who] || PEOPLE.family;
     const hl = hlForEvent(e.id);
     const cls = ['ev', e.type === 'special' ? 'ev--special' : 'ev--routine', hl ? 'ev--hl' : ''].join(' ');
     const whoTag = opts.hideWho ? '' : `<span class="who who-tag">${p.emoji} ${esc(p.name)}</span>`;
@@ -93,7 +101,7 @@
   }
 
   function compactEvent(e) {
-    const p = PEOPLE[e.who];
+    const p = PEOPLE[e.who] || PEOPLE.family;
     return `<details class="compact-ev ${e.type === 'special' ? 'is-special' : ''}">
       <summary class="compact-row">
         <span class="c-time">${e.start ? esc(e.start) : 'Heldag'}</span>
@@ -113,7 +121,7 @@
     const kidsBusy = CHILDREN.filter((c) => evs.some((e) => e.who === c)).length;
     let h = `<section class="summary">
       <div class="summary-big">${evs.length} aktiviteter</div>
-      <div class="summary-small">${kidsBusy} av 3 barn har något idag${soon.length ? '' : ' · inget som kräver extra koll'}</div>
+      <div class="summary-small">${kidsBusy} av ${CHILDREN.length} barn har något idag${soon.length ? '' : ' · inget som kräver extra koll'}</div>
     </section>`;
     if (soon.length) {
       h += `<section class="section"><h2 class="sec-title">Tänk på</h2>${soon.map((x) => hlCard(x, { compact: false })).join('')}</section>`;
@@ -126,7 +134,7 @@
 
   function viewVecka() {
     // Endast barn i rutnätet – ingen "Alla"/familje-rad
-    const rows = ['harry', 'albert', 'georg'];
+    const rows = CHILDREN.slice();
     let grid = '<div class="grid" role="table" aria-label="Veckoöversikt"><div class="grid-row grid-head" role="row"><div class="grid-label"></div>';
     for (let d = 0; d < WEEK_DAYS; d++) {
       grid += `<a class="grid-day ${d === 0 ? 'is-today' : ''}" href="#dag-${d}" role="columnheader">${DAYS_SHORT[dateFor(d).getDay()]}<small>${dateFor(d).getDate()}</small></a>`;
@@ -265,4 +273,25 @@
   if (upcoming) { badge.textContent = upcoming; badge.hidden = false; }
 
   render();
+}
+
+/* Mock-data exponeras explicit (data.js använder top-level const). */
+window.MOCK_EVENTS = EVENTS;
+window.MOCK_HIGHLIGHTS = HIGHLIGHTS;
+window.MOCK_CHILDREN = CHILDREN;
+
+(function () {
+  'use strict';
+  const valid = (d) => d && typeof d.today === 'string' && Array.isArray(d.events);
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = setTimeout(() => ctrl && ctrl.abort(), 6000);
+  fetch('/api/events', { credentials: 'same-origin', cache: 'no-store',
+    headers: { Accept: 'application/json' }, signal: ctrl ? ctrl.signal : undefined })
+    .then((r) => {
+      const ct = r.headers.get('content-type') || '';
+      if (!r.ok || !ct.includes('application/json')) throw new Error('no live data');
+      return r.json();
+    })
+    .then((d) => { clearTimeout(timer); if (!valid(d)) throw new Error('bad data'); familjenBoot(d); })
+    .catch(() => { clearTimeout(timer); familjenBoot(null); });
 })();
